@@ -1,9 +1,13 @@
 // ============================================================
-// Vision Agent — calls backend proxy /api/plantnet (fixes 403/CORS)
+// Vision Agent — PlantNet primary + Qwen3.5 vision fallback
+// Calls /api/plantnet for species ID, falls back to /api/qwen/vision
+// for AI-powered crop disease / health analysis
 // ============================================================
 import type { VisionResult, AgentResult } from './types';
 
 const CACHE_KEY = 'agrovision_vision_cache';
+
+// ─── PlantNet identification ─────────────────────────────────
 
 export async function identifyPlant(imageFile: File): Promise<AgentResult<VisionResult>> {
   try {
@@ -56,6 +60,53 @@ export async function identifyPlant(imageFile: File): Promise<AgentResult<Vision
     return { data: null, error: err.message, cached: false, timestamp: Date.now() };
   }
 }
+
+// ─── Qwen3.5 Vision Analysis (AI crop health analysis) ──────
+
+export interface QwenVisionResult {
+  analysis: string;
+  model: string;
+  method: string;
+}
+
+/**
+ * Analyze a crop/plant image using Qwen3.5-9B multimodal vision.
+ * Accepts a File object — converts to base64 data URL internally.
+ * Falls back gracefully.
+ */
+export async function analyzeImageWithQwen(
+  imageFile: File,
+  question?: string,
+): Promise<AgentResult<QwenVisionResult>> {
+  try {
+    // Convert file → base64 data URL (works with router.huggingface.co)
+    const dataUrl = await fileToPreviewUrl(imageFile);
+
+    const res = await fetch('/api/qwen/vision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageUrl: dataUrl, question }),
+    });
+
+    if (res.status === 503) {
+      // Model loading — surface to UI
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json.error || 'Vision AI is loading. Retry in ~20 seconds.');
+    }
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `Status ${res.status}` }));
+      throw new Error(err.error || `Vision analysis error ${res.status}`);
+    }
+
+    const data: QwenVisionResult = await res.json();
+    return { data, error: null, cached: false, timestamp: Date.now() };
+  } catch (err: any) {
+    return { data: null, error: err.message, cached: false, timestamp: Date.now() };
+  }
+}
+
+// ─── Utility ─────────────────────────────────────────────────
 
 export function fileToPreviewUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {

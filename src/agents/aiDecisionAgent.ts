@@ -68,7 +68,20 @@ function extractJSON(raw: string): AIDecision | null {
   const match = cleaned.match(/\{[\s\S]*\}/);
   if (!match) return null;
   try {
-    return JSON.parse(match[0]) as AIDecision;
+    const parsed = JSON.parse(match[0]);
+
+    // Sanitization: Fix for React crashing when Qwen hallucinates nested objects for string fields
+    const stringFields = ['recommendation', 'explanation', 'crop', 'fertilizer', 'irrigation', 'pestAdvice', 'yieldForecast', 'sellingStrategy'];
+    for (const field of stringFields) {
+      if (parsed[field] && typeof parsed[field] === 'object') {
+        // Flatten the rogue object into a readable string
+        parsed[field] = Object.entries(parsed[field])
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(', ');
+      }
+    }
+
+    return parsed as AIDecision;
   } catch {
     return null;
   }
