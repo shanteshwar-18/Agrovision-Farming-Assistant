@@ -117,12 +117,7 @@ agrovision-farming-assistant/
 
 ## 🤝 Contributors
 
-*   **[Your Name / Alias]** - *Lead Developer & Architect* - [GitHub Profile](https://github.com/)
-*   **[Contributor Name]** - *AI Integration Specialist* - [GitHub Profile](https://github.com/)
-*   **[Contributor Name]** - *Frontend Engineer* - [GitHub Profile](https://github.com/)
+*   **Shanteshwar Malang** - *Lead Developer & Architect* - [GitHub Profile](https://github.com/)
+*   **Aryan Ketkar** - *AI Integration Specialist* - [GitHub Profile](https://github.com/)
+*   **Vaishnavi Mahangade** - *Frontend Engineer* - [GitHub Profile](https://github.com/)
 
----
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
